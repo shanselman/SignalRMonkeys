@@ -1,0 +1,80 @@
+﻿<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />    
+    <title>Shakespearean Monkeys - Powered by .NET & SignalR</title>
+    <link href="style.css" rel="stylesheet" />    
+</head>
+<body>    
+    <div id="container">
+        <h1>Shakespearean Monkeys</h1>    
+        <div>   
+            <div>Target:</div>
+            <textarea id="targettext" rows="6" cols="45"></textarea>
+        </div>     
+        <div>
+            <div>Current:</div>
+            <textarea id="currenttext" rows="6" cols="45" readonly="readonly"></textarea>               
+        </div>        
+        <label for="isparallel">Parallel</label><input id="isparallel" type="checkbox" value="Parallel" />
+        <input type="button" id="startbutton" value="Queue" />                
+        <input type="button" id="cancelbutton" value="Cancel All" disabled="disabled" />                
+        <span id="status"></span>
+        <div>
+            <label for="generation">Generation:</label><span id="generation"></span>
+        </div>
+        <div>
+            <label for="gps">Generations / sec:</label><span id="gps"></span>
+        </div>
+        <img src="HamletMonkey.jpg" alt="monkey" />
+    </div>
+    <script src="Scripts/jquery-1.6.4.min.js"></script>    
+    <script src="Scripts/json2.min.js"></script>
+    <script src="Scripts/jquery.signalR.min.js"></script>
+    <script src="signalr/hubs"></script>
+    <script>
+        $(function () {
+            $('#targettext').val('To be or not to be, that is the question;\nWhether \'tis nobler in the mind to suffer\n\The slings and arrows of outrageous fortune,\n\Or to take arms against a sea of troubles,\n\And by opposing, end them.');
+
+            var monkeys = $.connection.monkeys,
+                currenttext = $('#currenttext'),
+                generationSpan = $('#generation'),
+                gpsSpan = $('#gps');
+
+            monkeys.updateProgress = function (text, generation, gps) {
+                currenttext.val(text);
+                generationSpan.text(generation);
+                gpsSpan.text(gps);
+            };
+
+            monkeys.started = function (target) {
+                $('#status').text('Working...');
+                $('#targettext').val(target);
+                $('#cancelbutton').removeAttr('disabled');
+            };
+
+            monkeys.cancelled = function () {
+                $('#status').text('Cancelled');
+                $('#cancelbutton').attr('disabled', 'disabled');
+            };
+
+            monkeys.complete = function () {
+                $('#status').text('Done');
+                $('#cancelbutton').attr('disabled', 'disabled');
+            };
+
+            $.connection.hub.start({}, function () {
+                $('#startbutton').click(function (event) {
+                    $('#status').text('Queued...');
+                    monkeys.startTyping($('#targettext').val(), $('#isparallel').is(':checked'));
+                });
+
+                $('#cancelbutton').click(function (event) {
+                    monkeys.stopTyping();
+                });
+            });
+
+        });
+    </script>
+</body>
+</html>
